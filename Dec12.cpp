@@ -4,41 +4,44 @@
 #include <vector>
 #include <sstream>
 #include <queue>
+#include "../graph_algorithms.h"
 
+using Nodes = std::pair<int,int>;
 
-void print(const std::vector<std::vector<int>>& map){
-    for (auto it=map.begin();it<map.end();++it){
-        for (auto itt=(*it).begin();itt<(*it).end();++itt){
-            std::cout<<*itt<<' ';
-        }
-        std::cout<<'\n';
-    }
-}
+class Graph{
+    public:
 
-int main(){
-
-    std::ifstream file("data12.txt");
-    std::string str{};
     std::vector<std::vector<int>> map{};
-    std::queue<std::pair<int,int>> start{};
-    std::pair<int,int> finish{};
+    Nodes start{};
+    Nodes target{};
+    std::vector<std::pair<int,int>> directions = {{1,0},{0,1},{-1,0},{0,-1}};
+
+    bool part_one{};
+
+    void readFile(std::ifstream&);
+    void print() const;
+
+    bool isGoal(const Nodes&) const;
+    std::vector<Nodes> getNeighbours(const Nodes&) const;
+
+};
+
+void Graph::readFile(std::ifstream& file){
     int row{};
     int col{};
-
-    //READ DATA
+    std::string str{};
     while(getline(file,str)){
         std::stringstream ss{str};
         char c{};
         std::vector<int> line{};
         col=0;
         while (ss.get(c)){
-            if (c=='S' || c=='a'){
+            if (c=='S'){
                 line.push_back(0);
-                start.push(std::pair<int,int> (row,col));
+                start = std::make_pair(row,col);
             }else if (c=='E'){
-                line.push_back('z'-'a');
-                finish.first = row;
-                finish.second = col;
+                line.push_back('z'-'a'+1);
+                target = std::make_pair(row,col);
             }else{
                 line.push_back(c-'a');
             }
@@ -47,58 +50,72 @@ int main(){
         map.push_back(line);
         ++row;
     }
+}
 
-    //print(map);
-
-    int best_score{INT_MAX};
-
-    while (!start.empty()){
-        std::vector<std::vector<int>> cost(map.size(),std::vector<int> (map[0].size(),0));
-        cost[start.front().first][start.front().second] = 1;
-        
-        std::queue<std::pair<int,int>> neighbours{};
-        neighbours.push(start.front());
-
-        while (!neighbours.empty()){
-            
-            std::pair<int,int> cur{neighbours.front()};
-            if (cur.first>0){
-                if (cost[cur.first-1][cur.second]==0 && map[cur.first-1][cur.second]<=map[cur.first][cur.second]+1){
-                    neighbours.push(std::pair<int,int> (cur.first-1,cur.second));
-                    cost[cur.first-1][cur.second] = cost[cur.first][cur.second]+1;
-                }
-            }
-            if (cur.first<map.size()-1){
-                if (cost[cur.first+1][cur.second]==0 && map[cur.first+1][cur.second]<=map[cur.first][cur.second]+1){
-                    neighbours.push(std::pair<int,int> (cur.first+1,cur.second));
-                    cost[cur.first+1][cur.second] = cost[cur.first][cur.second]+1;
-                }
-            }
-            if (cur.second>0){
-                if (cost[cur.first][cur.second-1]==0 && map[cur.first][cur.second-1]<=map[cur.first][cur.second]+1){
-                    neighbours.push(std::pair<int,int> (cur.first,cur.second-1));
-                    cost[cur.first][cur.second-1] = cost[cur.first][cur.second]+1;
-                }
-            }
-            if (cur.second<map[0].size()){
-                if (cost[cur.first][cur.second+1]==0 && map[cur.first][cur.second+1]<=map[cur.first][cur.second]+1){
-                    neighbours.push(std::pair<int,int> (cur.first,cur.second+1));
-                    cost[cur.first][cur.second+1] = cost[cur.first][cur.second]+1;
-                }
-            }
-            neighbours.pop();
-            }
-
-        if (cost[finish.first][finish.second]!=0){
-            best_score = std::min(best_score,cost[finish.first][finish.second]-1);
+void Graph::print() const{
+    for (auto it=map.begin();it<map.end();++it){
+        for (auto itt=(*it).begin();itt<(*it).end();++itt){
+            std::cout<<*itt<<' ';
         }
-        start.pop();
+        std::cout<<'\n';
+    }
+}
+
+bool Graph::isGoal(const Nodes& node) const{
+    if (part_one){
+        return (node == target);
+    }else{
+        return (map[node.first][node.second]==0);
+    }
+}
+
+std::vector<Nodes> Graph::getNeighbours(const Nodes& node) const{
+    std::vector<Nodes> neighbours{};
+
+    for (int i=0;i<4;++i){
+        Nodes cur{node};
+        cur.first += directions[i].first;
+        cur.second += directions[i].second;
+
+        if (cur.first<0 || cur.first>map.size()-1 || cur.second<0 || cur.second>map[0].size()-1) continue;
+
+        if (part_one){
+
+            if (map[cur.first][cur.second]<=map[node.first][node.second]+1){
+                neighbours.push_back(cur);
+            }
+
+        }else{
+
+            if (map[cur.first][cur.second]>=map[node.first][node.second]-1){
+                neighbours.push_back(cur);
+            }
+
+        }
+
     }
 
-    std::cout<<best_score<<'\n';
+    return neighbours;
+}
 
 
+int main(){
+
+    std::ifstream file("data12.txt");
+
+    Graph graph{};
+    graph.readFile(file);
+
+    //graph.print();
+
+    graph.part_one = true;
+    std::pair<Nodes,int> result = bfs(graph.start,graph);
+    std::cout<<"Part one: "<<result.second<<'\n';
     
+    graph.part_one = false;
+    result = bfs(graph.target,graph);
+    std::cout<<"Part two: "<<result.second<<'\n';
+
     return 0;
 }
 
