@@ -9,10 +9,76 @@
 #include <utility>
 
 
+
+
+//=========================================================================================
+//  FUNCTION BFS
+//=========================================================================================
 template <typename NodeObject,typename GraphObject>
-std::pair<NodeObject,int> bfs(const NodeObject& root,GraphObject& graphObject){
+std::map<NodeObject,int> bfs(const NodeObject& root,GraphObject& graphObject){
     //============================================================
     // BREADTH FIRST SEARCH ALGORITHM
+    // 
+    // INPUT:
+    // - root node
+    // - graphObject: it must contain member functions
+    //   - std::vector<NodeObject> getNeighbours(const NodeObject&) const
+    //     (returning the neighbours of a certain node)
+    //
+    //  OUTPUT:
+    //  map (node , distance)
+    //
+    //============================================================
+
+    std::map<NodeObject,int> distances{};
+    distances.insert(std::make_pair(root,0));
+
+    std::queue<std::pair<NodeObject,int>> Q{};
+    Q.push(std::make_pair(root,0));
+
+    std::set<NodeObject> visited{};
+    visited.insert(root);
+
+    while (!Q.empty()){
+
+        NodeObject node{Q.front().first};
+        int cur_dist{Q.front().second};
+        Q.pop();
+
+        distances.insert(std::make_pair(node,cur_dist));
+
+        const std::vector<NodeObject> neighbours = graphObject.getNeighbours(node);
+
+        for (auto it=neighbours.begin();it!=neighbours.end();++it){
+
+            auto resultInsert = visited.insert(*it);
+            if (resultInsert.second){
+
+                Q.push(std::make_pair(*it,cur_dist+1));
+
+            }
+
+        }
+
+    }
+
+    return distances;
+}
+//=========================================================================================
+//  END OF FUNCTION
+//=========================================================================================
+
+
+
+
+
+//=========================================================================================
+//  FUNCTION BFS_WITH_TARGET
+//=========================================================================================
+template <typename NodeObject,typename GraphObject>
+std::pair<NodeObject,int> bfs_with_target(const NodeObject& root,GraphObject& graphObject){
+    //============================================================
+    // BREADTH FIRST SEARCH ALGORITHM WITH TARGET
     // 
     // INPUT:
     // - root node
@@ -23,7 +89,7 @@ std::pair<NodeObject,int> bfs(const NodeObject& root,GraphObject& graphObject){
     //     (returning if a certain node is the goal)
     //
     //  OUTPUT:
-    //  pair (target node ,  distance)
+    //  pair (target node , distance)
     //
     //============================================================
 
@@ -58,8 +124,16 @@ std::pair<NodeObject,int> bfs(const NodeObject& root,GraphObject& graphObject){
 
     return {};
 }
+//=========================================================================================
+//  END OF FUNCTION
+//=========================================================================================
 
 
+
+
+//=========================================================================================
+//  FUNCTION DFS
+//=========================================================================================
 template <typename NodeObject,typename GraphObject>
 void dfs(const NodeObject& root,const GraphObject& graphObject){
     //============================================================
@@ -95,8 +169,15 @@ void dfs(const NodeObject& root,const GraphObject& graphObject){
     }
 
 }
+//=========================================================================================
+//  END OF FUNCTION
+//=========================================================================================
 
 
+
+//=========================================================================================
+// FUNCTION DIJKSTRA
+//=========================================================================================
 template <typename NodeObject,typename GraphObject>
 int dijkstra(const NodeObject& source,const NodeObject& target,GraphObject& graphObject){
     //============================================================
@@ -165,6 +246,12 @@ int dijkstra(const NodeObject& source,const NodeObject& target,GraphObject& grap
 
     return INT_MAX;
 }
+//=========================================================================================
+//  END OF FUNCTION
+//=========================================================================================
+
+
+
 
 
 #endif
